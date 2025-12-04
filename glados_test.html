@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GLaDOS TTS Browser Test</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f400; }
+        .container { max-width: 600px; margin: 0 auto; background: rgba(255, 255, 255, 0.103); padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1 { color: #888; border-bottom: 2px solid #ccc; padding-bottom: 10px; }
+        textarea { width: 100%; height: 100px; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; resize: vertical; }
+        button { padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.3s; }
+        button:hover { background-color: #0056b3; }
+        #status { margin-top: 15px; font-weight: bold; color: green; }
+        audio { width: 100%; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>GLaDOS TTS - Test Chamber</h1>
+        <p>Enter the text you want GLaDOS to speak:</p>
+        <textarea id="textInput" placeholder="Testing complete. The service is now operational."></textarea>
+        
+        <label for="alphaInput">Alpha (Pitch/Speed):</label>
+        <input type="number" id="alphaInput" value="1.0" min="0.5" max="2.0" step="0.1" style="width: 80px; margin-bottom: 15px;">
+        
+        <button onclick="generateAudio()">Generate and Play</button>
+        
+        <div id="status">Ready.</div>
+        
+        <audio id="audioPlayer"></audio>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:8000/generate-audio/";
+        const statusElement = document.getElementById('status');
+        const audioPlayer = document.getElementById('audioPlayer');
+
+        async function generateAudio() {
+            const text = document.getElementById('textInput').value || "Testing complete. The service is now operational.";
+            const alpha = parseFloat(document.getElementById('alphaInput').value) || 1.0;
+            
+            statusElement.textContent = "Running aperture science synthetic voice generation,Stay seated.";
+            audioPlayer.src = ""; // Clear previous audio
+
+            try {
+                // 1. Send the POST request
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'audio/wav' // Tell the server we expect WAV data
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        alpha: alpha
+                    })
+                });
+
+                // Check for HTTP errors (like 500 Internal Server Error)
+                if (!response.ok) {
+                    throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
+                }
+
+                // 2. Get the binary audio data as a Blob
+                const audioBlob = await response.blob();
+                
+                // 3. Create a temporary URL for the Blob
+                const audioUrl = URL.createObjectURL(audioBlob);
+
+                // 4. Set the audio element source and play
+                audioPlayer.src = audioUrl;
+                audioPlayer.play();
+
+                statusElement.textContent = "Audio received and playing!";
+
+            } catch (error) {
+                statusElement.textContent = `Error: Failed to fetch audio. Is the server running? (${error.message})`;
+                console.error("Fetch error:", error);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+**/__pycache__/**
+*.wav
+audio/*
+/Gladosv2
+/Glados_enviroment
